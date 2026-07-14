@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #0b1120; font-family: sans-serif; color: white; overflow: hidden; }
+        .chat-app { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+
+        .header { padding: 30px; text-align: center; font-weight: bold; font-size: 28px; border-bottom: 2px solid #1e293b; background: #0f172a; }
+        /* Thanh trạng thái sẽ tự biến mất nếu không có ai */
+        #status-bar { padding: 15px 30px; font-size: 18px; color: #94a3b8; background: #1e293b; min-height: 20px; }
+        
+        .chat-content { flex: 1; padding: 50px; overflow-y: auto; display: flex; flex-direction: column; gap: 40px; }
+        .msg-row { display: flex; align-items: flex-start; gap: 25px; }
+        .avatar { width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; flex-shrink: 0; }
+        .msg-bubble { background: #1d4ed8; padding: 25px 40px; border-radius: 0 30px 30px 30px; font-size: 22px; max-width: 60%; line-height: 1.6; }
+        .username { font-size: 18px; color: #60a5fa; margin-bottom: 12px; display: block; font-weight: bold; }
+        
+        .input-container { padding: 30px; background: #0f172a; border-top: 2px solid #1e293b; }
+        .input-box { display: flex; align-items: center; background: #1e293b; border-radius: 50px; padding: 15px 30px; }
+        input { flex: 1; background: transparent; border: none; padding: 20px; color: white; outline: none; font-size: 22px; }
+        .send-btn { background: #6366f1; border: none; padding: 20px 40px; border-radius: 50px; color: white; cursor: pointer; font-size: 22px; font-weight: bold; }
+        .admin-badge { color: #fbbf24; text-shadow: 0 0 10px #fbbf24; margin-left: 8px; font-size: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="chat-app">
+    <div class="header">Chat Cộng Đồng ANMOD.LOL</div>
+    <div id="status-bar"></div>
+    
+    <div class="chat-content" id="chat-box"></div>
+
+    <div class="input-container">
+        <div class="input-box">
+            <input type="text" id="msg-input" placeholder="Nhập tin nhắn..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button class="send-btn" onclick="sendMessage()">GỬI TIN NHẮN</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let isAdmin = false;
+
+    async function init() {
+        // Kiểm tra IP Admin
+        const res = await fetch('https://api.ipify.org?format=json').catch(() => ({ip: ''}));
+        const data = await res.json();
+        isAdmin = (data.ip === "1.55.100.66");
+
+        // Logic đếm người: Chỉ tính là 1 nếu mở trang
+        // Lưu vào localStorage để trình duyệt "nhớ"
+        localStorage.setItem('user_online', '1');
+        updateStatus();
+    }
+
+    function updateStatus() {
+        const statusBar = document.getElementById('status-bar');
+        const count = localStorage.getItem('user_online');
+
+        if (count && parseInt(count) > 0) {
+            statusBar.style.display = 'block';
+            statusBar.innerHTML = `● ${count} người đang trực tuyến`;
+        } else {
+            statusBar.style.display = 'none';
+        }
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('msg-input');
+        const chatBox = document.getElementById('chat-box');
+        if (input.value.trim() === "") return;
+
+        const row = document.createElement('div');
+        row.className = 'msg-row';
+        row.innerHTML = `
+            <div class="avatar" style="background:${isAdmin ? '#d97706':'#374151'}">${isAdmin ? 'A' : 'K'}</div>
+            <div>
+                <span class="username">${isAdmin ? 'ADMIN <span class="admin-badge">✔</span>' : 'Khách'}</span>
+                <div class="msg-bubble">${input.value}</div>
+            </div>
+        `;
+        chatBox.appendChild(row);
+        input.value = "";
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Khi đóng tab/tắt trình duyệt, xóa trạng thái online
+    window.addEventListener('beforeunload', () => {
+        localStorage.setItem('user_online', '0');
+    });
+
+    init();
+</script>
+</body>
+</html>
